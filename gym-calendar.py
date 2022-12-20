@@ -1,14 +1,19 @@
 #!/usr/bin/python3
 
-from datetime import timedelta
+from datetime import datetime, timedelta
 from dateutil import tz
 from dateutil.parser import parse
 from icalendar import Calendar, Event
 from pathlib import Path
+import pytz
 import re
 
 location_file = "location.txt"
 checkins_file = "checkins.txt"
+
+def is_dst(dt, timeZone):
+    aware_dt = timeZone.localize(dt)
+    return aware_dt.dst() != timedelta(0, 0)
 
 cal = Calendar()
 cal.add("prodid", f"-//rrasch/GymCalendar//EN")
@@ -27,6 +32,8 @@ lines = list(filter(None, lines))
 
 line_iter = iter(lines)
 
+local_timezone = pytz.timezone("US/Eastern")
+
 for line in line_iter:
     date_match = re.search(r"^(\d+/\d+)", line)
     if date_match:
@@ -43,7 +50,9 @@ for line in line_iter:
         full_date = f"{date}/2022 {hour}:{minutes:02d}{ampm}"
         # print(full_date)
 
-        start_time = parse(full_date).replace(tzinfo=tz.tzlocal())
+        start_time = parse(full_date)
+        # start_time = start_time.replace(tzinfo=tz.tzlocal())
+        start_time = local_timezone.localize(start_time)
         end_time = start_time + timedelta(hours=2)
 
         # print(start_time.strftime('%Y-%m-%d %I:%M %p %Z%z'))
