@@ -11,7 +11,7 @@ import pytz
 import re
 
 location_file = "location.txt"
-checkins_file = "checkins-fixed.txt"
+checkins_file = "checkins.txt"
 
 def is_dst(dt, timeZone):
     aware_dt = timeZone.localize(dt)
