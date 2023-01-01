@@ -5,6 +5,7 @@ from dateutil.parser import parse
 from icalendar import Calendar, Event
 import pandas as pd
 import pytz
+import re
 import tabula
 
 file = "Club-Visits-20211230-20221230.pdf"
@@ -31,6 +32,9 @@ for df in tables:
     for index, row in df.iterrows():
         checkin_time, club, address = row
 
+        club = club.replace("\r", " ")
+        club = re.sub(r" SS$", " Super Sport", club)
+
         start_time = parse(checkin_time)
         start_time = local_timezone.localize(start_time)
         end_time = start_time + timedelta(hours=2)
@@ -42,7 +46,7 @@ for df in tables:
         event.add("description", f"Gym Workout {checkin_time}")
         event.add("dtstart", start_time)
         event.add("dtend", end_time)
-        event.add("location", address)
+        event.add("location", f"{club}, {address}")
         event["uid"] = uid
         cal.add_component(event)
 
