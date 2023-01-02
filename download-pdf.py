@@ -33,6 +33,8 @@ parser.add_argument("--start-date", "-s",
 parser.add_argument("--end-date", "-e",
     default=last_day_of_prev_month(),
     help="End date of report period")
+parser.add_argument("--headless", action="store_true",
+    help="Run in headless mode")
 args = parser.parse_args()
 
 
@@ -48,6 +50,7 @@ with open("config.toml", "rb") as f:
 options = webdriver.ChromeOptions()
 prefs = {"download.default_directory": os.getcwd()}
 options.add_experimental_option("prefs", prefs)
+options.headless = args.headless
 
 driver = webdriver.Chrome(options=options)
 
