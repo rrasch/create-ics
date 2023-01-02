@@ -1,11 +1,45 @@
 #!/usr/bin/python3
 
-# import mechanize
 
+from dateparser import parse
+from datetime import date, timedelta
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
+import argparse
 import time
 import tomli
+
+
+def format_date(date):
+    return date.strftime("%m/%d/%Y")
+
+def first_day_of_prev_month():
+    now = date.today()
+    first_day = (now - timedelta(days=now.day)).replace(day=1)
+    return format_date(first_day)
+
+def last_day_of_prev_month():
+    last_day = date.today().replace(day=1) - timedelta(days=1)
+    return format_date(last_day)
+
+
+parser = argparse.ArgumentParser(
+    description="Download club visits pdf report.",
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parser.add_argument("--start-date", "-s",
+    default=first_day_of_prev_month(),
+    help="Start date of report period")
+parser.add_argument("--end-date", "-e",
+    default=last_day_of_prev_month(),
+    help="End date of report period")
+args = parser.parse_args()
+
+
+start_date_str = format_date(parse(args.start_date))
+end_date_str = format_date(parse(args.end_date))
+
+print(f"start date: {start_date_str}")
+print(f"end date:   {end_date_str}")
 
 with open("config.toml", "rb") as f:
     config = tomli.load(f)
@@ -24,19 +58,19 @@ driver.find_element_by_id("myaccount-login-info-passwrd").submit()
 
 time.sleep(10)
 
-end_date = driver.find_element_by_xpath("//div[@id='endDate']/input")
-end_date.click()
-end_date.clear()
-end_date.send_keys("12/15/2022")
-end_date.send_keys(Keys.RETURN)
+end_date_input = driver.find_element_by_xpath("//div[@id='endDate']/input")
+end_date_input.click()
+end_date_input.clear()
+end_date_input.send_keys(end_date_str)
+end_date_input.send_keys(Keys.RETURN)
 
 time.sleep(5)
 
-start_date = driver.find_element_by_xpath("//div[@id='startDate']/input")
-start_date.click()
-start_date.clear()
-start_date.send_keys("10/30/2022")
-start_date.send_keys(Keys.RETURN)
+start_date_input = driver.find_element_by_xpath("//div[@id='startDate']/input")
+start_date_input.click()
+start_date_input.clear()
+start_date_input.send_keys(start_date_str)
+start_date_input.send_keys(Keys.RETURN)
 
 time.sleep(5)
 
