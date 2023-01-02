@@ -50,7 +50,12 @@ with open("config.toml", "rb") as f:
 options = webdriver.ChromeOptions()
 prefs = {"download.default_directory": os.getcwd()}
 options.add_experimental_option("prefs", prefs)
-options.headless = args.headless
+
+if args.headless:
+    options.headless = True
+    options.add_argument("--window-size=1920,1080")
+    options.add_argument("--start-maximized")
+    options.add_argument("--headless")
 
 driver = webdriver.Chrome(options=options)
 
