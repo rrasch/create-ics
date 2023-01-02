@@ -6,6 +6,7 @@ from datetime import date, timedelta
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 import argparse
+import os
 import time
 import tomli
 
@@ -44,7 +45,11 @@ print(f"end date:   {end_date_str}")
 with open("config.toml", "rb") as f:
     config = tomli.load(f)
 
-driver = webdriver.Chrome()
+options = webdriver.ChromeOptions()
+prefs = {"download.default_directory": os.getcwd()}
+options.add_experimental_option("prefs", prefs)
+
+driver = webdriver.Chrome(options=options)
 
 driver.maximize_window()
 
@@ -79,3 +84,16 @@ driver.find_element_by_id("membership-clubvisits-filters-go-btn").click()
 time.sleep(10)
 
 driver.find_element_by_id("pt-print").click()
+
+time.sleep(10)
+
+driver.find_element_by_id("my-account-nav-section").click()
+
+time.sleep(2)
+
+# driver.find_element_by_xpath("//button[@data-itemid='logout-btn']").click()
+driver.find_element_by_xpath("//button[@class='logout-link']").click()
+
+time.sleep(10)
+
+driver.close()
