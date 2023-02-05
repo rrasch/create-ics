@@ -4,7 +4,10 @@
 from dateparser import parse
 from datetime import date, timedelta
 from selenium import webdriver
+from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 import argparse
 import os
 import time
@@ -65,13 +68,13 @@ driver.get(config["visits_url"])
 
 driver.refresh()
 
-driver.find_element_by_id("myaccount-login-info-usrname").send_keys(config["username"])
-driver.find_element_by_id("myaccount-login-info-passwrd").send_keys(config["password"])
-driver.find_element_by_id("myaccount-login-info-passwrd").submit()
+driver.find_element(By.ID, "myaccount-login-info-usrname").send_keys(config["username"])
+driver.find_element(By.ID, "myaccount-login-info-passwrd").send_keys(config["password"])
+driver.find_element(By.ID, "myaccount-login-info-passwrd").submit()
 
 time.sleep(10)
 
-end_date_input = driver.find_element_by_xpath("//div[@id='endDate']/input")
+end_date_input = driver.find_element(By.XPATH, "//div[@id='endDate']/input")
 end_date_input.click()
 end_date_input.clear()
 end_date_input.send_keys(end_date_str)
@@ -79,7 +82,7 @@ end_date_input.send_keys(Keys.RETURN)
 
 time.sleep(5)
 
-start_date_input = driver.find_element_by_xpath("//div[@id='startDate']/input")
+start_date_input = driver.find_element(By.XPATH, "//div[@id='startDate']/input")
 start_date_input.click()
 start_date_input.clear()
 start_date_input.send_keys(start_date_str)
@@ -87,20 +90,20 @@ start_date_input.send_keys(Keys.RETURN)
 
 time.sleep(5)
 
-driver.find_element_by_id("membership-clubvisits-filters-go-btn").click()
+driver.find_element(By.ID, "membership-clubvisits-filters-go-btn").click()
 
 time.sleep(10)
 
-driver.find_element_by_id("pt-print").click()
+driver.find_element(By.ID, "pt-print").click()
 
 time.sleep(10)
 
-driver.find_element_by_id("my-account-nav-section").click()
+driver.find_element(By.ID, "my-account-nav-section").click()
 
 time.sleep(2)
 
-# driver.find_element_by_xpath("//button[@data-itemid='logout-btn']").click()
-driver.find_element_by_xpath("//button[@class='logout-link']").click()
+# driver.find_element(By.XPATH, "//button[@data-itemid='logout-btn']").click()
+driver.find_element(By.XPATH, "//button[@class='logout-link']").click()
 
 time.sleep(10)
 
