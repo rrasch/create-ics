@@ -11,11 +11,21 @@ import pytz
 import re
 import tabula
 
+
+def change_ext(filename, new_ext):
+    basename, ext = os.path.splitext(filename)
+    return f"{basename}{new_ext}"
+
 parser = argparse.ArgumentParser(
     description="Create calendar for fitness club checkins.")
 parser.add_argument("pdf_file", metavar="CHECKIN_PDF_FILE",
     help="pdf file containing checkin times")
 args = parser.parse_args()
+
+ics_file = change_ext(args.pdf_file, ".ics")
+if os.path.isfile(ics_file):
+    print(f"Calendar file {ics_file} already exists.")
+    exit(0)
 
 maps_api_key = os.environ.get("MAPS_API_KEY")
 geolocator = GoogleV3(api_key=maps_api_key)
@@ -67,6 +77,6 @@ for df in tables:
         event["uid"] = uid
         cal.add_component(event)
 
-with open("checkins.ics", "wb") as fh:
+with open(ics_file, "wb") as fh:
     fh.write(cal.to_ical())
 

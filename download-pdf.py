@@ -30,6 +30,8 @@ def last_day_of_prev_month():
     return format_date_search(last_day)
 
 
+script_dir = os.path.dirname(os.path.realpath(__file__))
+
 parser = argparse.ArgumentParser(
     description="Download club visits pdf report.",
     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -62,7 +64,8 @@ if os.path.isfile(pdf_file):
     print(f"pdf file {pdf_file} already exists.")
     exit(0)
 
-with open("config.toml", "rb") as f:
+config_file = os.path.join(script_dir, "config.toml")
+with open(config_file, "rb") as f:
     config = tomli.load(f)
 
 options = webdriver.ChromeOptions()
@@ -70,7 +73,7 @@ prefs = {"download.default_directory": os.getcwd()}
 options.add_experimental_option("prefs", prefs)
 
 if args.headless:
-    options.headless = True
+    # options.headless = True
     options.add_argument("--window-size=1920,1080")
     options.add_argument("--start-maximized")
     options.add_argument("--headless")
