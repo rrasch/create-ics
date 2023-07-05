@@ -18,12 +18,12 @@ cd $tmpdir
 
 $APP_HOME/download-pdf.py --headless
 
-pdf_file=$(ls *.pdf 2>/dev/null)
-
-if [ -z "$pdf_file" ]; then
+if [ ! -f *.pdf ]; then
 	echo "No pdf downloaded"
 	exit 1
 fi
+
+pdf_file=$(ls *.pdf)
 
 $APP_HOME/club-visits-cal.py "$pdf_file"
 
