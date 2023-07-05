@@ -7,15 +7,51 @@ from dateutil.parser import parse
 from icalendar import Calendar, Event
 from pathlib import Path
 from pprint import pprint
+import argparse
+import os
 import pytz
 import re
 
-location_file = "location.txt"
-checkins_file = "checkins.txt"
+
+def change_ext(filename, new_ext):
+    basename, ext = os.path.splitext(filename)
+    return f"{basename}{new_ext}"
+
 
 def is_dst(dt, timeZone):
     aware_dt = timeZone.localize(dt)
     return aware_dt.dst() != timedelta(0, 0)
+
+
+def valid_year(s):
+    try:
+        return datetime.strptime(s, "%Y")
+    except ValueError:
+        msg = "not a valid year: {0!r}".format(s)
+        raise argparse.ArgumentTypeError(msg)
+
+
+script_dir = os.path.dirname(os.path.realpath(__file__))
+script_name = Path(__file__).stem
+location_file = os.path.join(script_dir, "location.txt")
+
+parser = argparse.ArgumentParser(
+    description="Create calendar for fitness club checkins."
+)
+parser.add_argument(
+    "checkins_file",
+    metavar="CHECKIN_TXT_FILE",
+    help="txt file containing checkin times",
+)
+parser.add_argument("year", metavar="YEAR", type=valid_year)
+args = parser.parse_args()
+
+year = args.year.strftime("%Y")
+
+ics_file = change_ext(args.checkins_file, ".ics")
+if os.path.isfile(ics_file):
+    print(f"Calendar file {ics_file} already exists.")
+    exit(0)
 
 cal = Calendar()
 cal.add("prodid", f"-//rrasch/GymCalendar//EN")
@@ -25,7 +61,7 @@ with open(location_file) as fh:
     location = fh.readline().strip()
     # print(location)
 
-with open(checkins_file) as fh:
+with open(args.checkins_file) as fh:
     lines = fh.read().splitlines()
 
 lines = list(filter(None, lines))
@@ -51,7 +87,7 @@ for line in line_iter:
         hour = time_match.group(1)
         minutes = int(time_match.group(2))
         ampm = time_match.group(3)
-        full_date = f"{date}/2022 {hour}:{minutes:02d}{ampm}"
+        full_date = f"{date}/{year} {hour}:{minutes:02d}{ampm}"
         print(full_date)
 
         dates[date].append(time)
@@ -81,5 +117,5 @@ for date, times in dates.items():
     if len(times) > 1:
         print(f"{date}: {times}")
 
-with open("calendar.ics", "wb") as fh:
+with open(ics_file, "wb") as fh:
     fh.write(cal.to_ical())
