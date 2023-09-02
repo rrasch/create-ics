@@ -49,10 +49,17 @@ cal.add("prodid", f"-//rrasch/ClubCheckinCalendar//EN")
 cal.add("version", "2.0")
 
 cleaned_address = {}
+checkins = {}
 
 for df in tables:
     for index, row in df.iterrows():
         checkin_time, club, address = row
+
+        if checkin_time in checkins:
+            print(f"Duplicate {checkin_time=}")
+            continue
+
+        checkins[checkin_time] = 1
 
         club = club.replace("\r", " ")
         club = re.sub(r" SS$", " Super Sport", club)
@@ -76,6 +83,10 @@ for df in tables:
         event.add("location", location)
         event["uid"] = uid
         cal.add_component(event)
+
+# print(cal.to_ical().decode("utf-8").replace("\r\n", "\n").strip())
+
+print(f"Calendar has {len(cal.subcomponents)} checkins.")
 
 with open(ics_file, "wb") as fh:
     fh.write(cal.to_ical())
