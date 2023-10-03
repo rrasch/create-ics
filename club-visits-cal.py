@@ -5,6 +5,7 @@ from dateutil.parser import parse
 from geopy.geocoders import GoogleV3
 from icalendar import Calendar, Event
 import argparse
+import logging
 import os
 import pandas as pd
 import pytz
@@ -16,78 +17,115 @@ def change_ext(filename, new_ext):
     basename, ext = os.path.splitext(filename)
     return f"{basename}{new_ext}"
 
-parser = argparse.ArgumentParser(
-    description="Create calendar for fitness club checkins.")
-parser.add_argument("pdf_file", metavar="CHECKIN_PDF_FILE",
-    help="pdf file containing checkin times")
-args = parser.parse_args()
 
-ics_file = change_ext(args.pdf_file, ".ics")
-if os.path.isfile(ics_file):
-    print(f"Calendar file {ics_file} already exists.")
-    exit(0)
+def main():
+    parser = argparse.ArgumentParser(
+        description="Create calendar for fitness club checkins."
+    )
+    parser.add_argument(
+        "pdf_file",
+        metavar="CHECKIN_PDF_FILE",
+        help="pdf file containing checkin times",
+    )
+    parser.add_argument(
+        "-f",
+        "--force",
+        action="store_true",
+        help="Force removal of output file",
+    )
+    parser.add_argument(
+        "-d", "--debug", action="store_true", help="Enable debugging"
+    )
+    args = parser.parse_args()
 
-maps_api_key = os.environ.get("MAPS_API_KEY")
-geolocator = GoogleV3(api_key=maps_api_key)
+    level = logging.DEBUG if args.debug else logging.INFO
+    logging.basicConfig(format="%(levelname)s: %(message)s", level=level)
 
-local_timezone = pytz.timezone("US/Eastern")
+    ics_file = change_ext(args.pdf_file, ".ics")
+    if not args.force and os.path.isfile(ics_file):
+        print(f"Calendar file {ics_file} already exists.")
+        exit(0)
 
-pd.set_option(
-    "display.max_columns", None,
-    "display.max_rows", None,
-    "display.width", 0
-)
+    maps_api_key = os.environ["MAPS_API_KEY"]
+    geolocator = GoogleV3(api_key=maps_api_key)
 
-pdopt = {"header": None}
+    local_timezone = pytz.timezone("US/Eastern")
 
-tables = tabula.read_pdf(args.pdf_file, pages="all", pandas_options=pdopt)
+    pd.set_option(
+        "display.max_columns",
+        None,
+        "display.max_rows",
+        None,
+        "display.width",
+        0,
+    )
 
-tables[0].drop(index=0, inplace=True)
+    pdopt = {"header": None}
 
-cal = Calendar()
-cal.add("prodid", f"-//rrasch/ClubCheckinCalendar//EN")
-cal.add("version", "2.0")
+    tables = tabula.read_pdf(args.pdf_file, pages="all", pandas_options=pdopt)
 
-cleaned_address = {}
-checkins = {}
+    tables[0].drop(index=0, inplace=True)
 
-for df in tables:
-    for index, row in df.iterrows():
-        checkin_time, club, address = row
+    cal = Calendar()
+    cal.add("prodid", f"-//rrasch/ClubCheckinCalendar//EN")
+    cal.add("version", "2.0")
 
-        if checkin_time in checkins:
-            print(f"Duplicate {checkin_time=}")
-            continue
+    cleaned_address = {}
+    checkins = {}
+    prev_time = None
 
-        checkins[checkin_time] = 1
+    for df in tables:
+        for index, row in df.iterrows():
+            checkin_time, club, address = row
 
-        club = club.replace("\r", " ")
-        club = re.sub(r" SS$", " Super Sport", club)
+            if checkin_time in checkins:
+                print(f"Duplicate {checkin_time=}")
+                continue
 
-        if address not in cleaned_address:
-            cleaned_address[address] = geolocator.geocode(address)
+            checkins[checkin_time] = 1
 
-        location = f"{club}, {cleaned_address[address]}"
+            start_time = parse(checkin_time)
+            start_time = local_timezone.localize(start_time)
+            end_time = start_time + timedelta(hours=2)
 
-        start_time = parse(checkin_time)
-        start_time = local_timezone.localize(start_time)
-        end_time = start_time + timedelta(hours=2)
+            if prev_time:
+                time_diff = prev_time - start_time
+                diff_hours = time_diff.total_seconds() / (60 * 60)
+                if diff_hours < 2:
+                    print(
+                        f"Checkin time {checkin_time} is within 2 hours of"
+                        f" {prev_time}"
+                    )
+                    continue
 
-        uid = start_time.strftime("%Y%m%d%I%M%p%Z") + "@CheckinCalendar"
+            prev_time = start_time
 
-        event = Event()
-        event.add("summary", "Gym Workout")
-        event.add("description", f"Gym Workout {checkin_time}")
-        event.add("dtstart", start_time)
-        event.add("dtend", end_time)
-        event.add("location", location)
-        event["uid"] = uid
-        cal.add_component(event)
+            club = club.replace("\r", " ")
+            club = re.sub(r" SS$", " Super Sport", club)
 
-# print(cal.to_ical().decode("utf-8").replace("\r\n", "\n").strip())
+            if address not in cleaned_address:
+                cleaned_address[address] = geolocator.geocode(address)
 
-print(f"Calendar has {len(cal.subcomponents)} checkins.")
+            location = f"{club}, {cleaned_address[address]}"
 
-with open(ics_file, "wb") as fh:
-    fh.write(cal.to_ical())
+            uid = start_time.strftime("%Y%m%d%I%M%p%Z") + "@CheckinCalendar"
 
+            event = Event()
+            event.add("summary", "Gym Workout")
+            event.add("description", f"Gym Workout {checkin_time}")
+            event.add("dtstart", start_time)
+            event.add("dtend", end_time)
+            event.add("location", location)
+            event["uid"] = uid
+            cal.add_component(event)
+
+    logging.debug(cal.to_ical().decode("utf-8").replace("\r\n", "\n").strip())
+
+    print(f"Calendar has {len(cal.subcomponents)} checkins.")
+
+    with open(ics_file, "wb") as fh:
+        fh.write(cal.to_ical())
+
+
+if __name__ == "__main__":
+    main()
