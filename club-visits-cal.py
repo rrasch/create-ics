@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from datetime import timedelta
+from datetime import datetime, timedelta
 from dateutil.parser import parse
 from geopy.geocoders import GoogleV3
 from icalendar import Calendar, Event
@@ -73,10 +73,12 @@ def main():
     cleaned_address = {}
     checkins = {}
     prev_time = None
+    # prev_time = datetime.min.replace(tzinfo=pytz.UTC)
 
     for df in tables:
-        for index, row in df.iterrows():
+        for index, row in df[::-1].iterrows():
             checkin_time, club, address = row
+            logging.debug(f"{checkin_time=}")
 
             if checkin_time in checkins:
                 print(f"Duplicate {checkin_time=}")
@@ -88,9 +90,10 @@ def main():
             start_time = local_timezone.localize(start_time)
             end_time = start_time + timedelta(hours=2)
 
-            if prev_time:
-                time_diff = prev_time - start_time
-                diff_hours = time_diff.total_seconds() / (60 * 60)
+            if prev_time is not None:
+                time_diff = start_time - prev_time
+                logging.debug(f"{time_diff=}")
+                diff_hours = abs(time_diff.total_seconds()) / (60 * 60)
                 if diff_hours < 2:
                     print(
                         f"Checkin time {checkin_time} is within 2 hours of"
