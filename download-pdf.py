@@ -4,12 +4,14 @@
 from dateparser import parse
 from datetime import date, timedelta
 from selenium import webdriver
+from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+from webdriver_manager.chrome import ChromeDriverManager
 import argparse
-import chromedriver_autoinstaller
+import chromedriver_autoinstaller_fix
 import os
 import time
 import tomli
@@ -35,8 +37,8 @@ def last_day_of_prev_month():
 
 
 def main():
-    chromedriver_autoinstaller.install(
-        path=os.path.join(os.path.expanduser("~"), "bin")
+    chromedriver_autoinstaller_fix.install(
+        path=os.path.join(os.path.expanduser("~"), "chromedriver")
     )
 
     script_dir = os.path.dirname(os.path.realpath(__file__))
@@ -95,7 +97,9 @@ def main():
         options.add_argument("--start-maximized")
         options.add_argument("--headless")
 
-    driver = webdriver.Chrome(options=options)
+    service = ChromeService(ChromeDriverManager().install())
+
+    driver = webdriver.Chrome(options=options, service=service)
 
     driver.maximize_window()
 
