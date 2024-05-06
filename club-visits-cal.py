@@ -11,6 +11,7 @@ import pandas as pd
 import pytz
 import re
 import tabula
+import warnings
 
 
 def change_ext(filename, new_ext):
@@ -62,8 +63,13 @@ def main():
 
     pdopt = {"header": None}
 
-    tables = tabula.read_pdf(args.pdf_file, pages="all", pandas_options=pdopt)
+    with warnings.catch_warnings():
+        warnings.simplefilter(action="ignore", category=FutureWarning)
+        tables = tabula.read_pdf(
+            args.pdf_file, pages="all", lattice=True, pandas_options=pdopt
+        )
 
+    # remove row with column names
     tables[0].drop(index=0, inplace=True)
 
     cal = Calendar()
@@ -75,8 +81,10 @@ def main():
     prev_time = None
     # prev_time = datetime.min.replace(tzinfo=pytz.UTC)
 
-    for df in tables:
+    for df in reversed(tables):
         for index, row in df[::-1].iterrows():
+            logging.debug("row:\n%s", row)
+
             checkin_time, club, address = row
             logging.debug(f"{checkin_time=}")
 
