@@ -82,6 +82,8 @@ def main():
     # prev_time = datetime.min.replace(tzinfo=pytz.UTC)
 
     for df in reversed(tables):
+        df.dropna(axis=1, how="all", inplace=True)
+
         for index, row in df[::-1].iterrows():
             logging.debug("row:\n%s", row)
 
