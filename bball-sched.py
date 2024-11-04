@@ -86,6 +86,7 @@ def main():
         if map_link:
             address = parse_qs(urlparse(map_link["href"]).query)["q"][0]
 
+        logging.debug(f"----------")
         logging.debug(f"{day=}")
         logging.debug(f"{date=}")
         logging.debug(f"{time=}")
@@ -94,7 +95,9 @@ def main():
         logging.debug(f"{opponent=}")
         logging.debug(f"{address=}")
 
-        if game_type not in ["Game", "Scrimmage"]:
+        if not (
+            game_type in ["Game", "Scrimmage"] or "game day" in day.lower()
+        ):
             continue
 
         if "Zambetti" in location:
@@ -136,8 +139,6 @@ def main():
         event.add("location", ev_location)
         event["uid"] = uid
         cal.add_component(event)
-
-    logging.debug(cal.to_ical().decode("utf-8").replace("\r\n", "\n").strip())
 
     logging.info(f"Calendar has {len(cal.subcomponents)} events.")
 
