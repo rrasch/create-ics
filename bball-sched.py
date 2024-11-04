@@ -14,6 +14,7 @@ import logging
 import os
 import pytz
 import re
+import tzlocal
 
 
 def main():
@@ -21,7 +22,8 @@ def main():
         description="Download club visits pdf report.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("html_file", help="Schedule html file")
+    parser.add_argument("html_file", help="Input schedule html file")
+    parser.add_argument("ics_file", nargs="?", help="Output calendar ics file")
     parser.add_argument(
         "-d", "--debug", action="store_true", help="Enable debugging"
     )
@@ -45,7 +47,7 @@ def main():
         soup.find(
             "span",
             class_="site-nav-address--title",
-            text="Middle & Upper School",
+            string="Middle & Upper School",
         )
         .find_next_sibling("p")
         .get_text()
@@ -68,7 +70,7 @@ def main():
     cal.add("prodid", f"-//{script_name}//{team_name}//EN")
     cal.add("version", "2.0")
 
-    local_timezone = pytz.timezone("US/Eastern")
+    local_timezone = pytz.timezone(tzlocal.get_localzone_name())
     today = datetime.now()
     this_year = today.year
     next_year = this_year + 1
@@ -114,7 +116,7 @@ def main():
         if start_time < today:
             start_time = parse(f"{date}, {next_year} {time}")
         start_time = local_timezone.localize(start_time)
-        end_time = start_time + timedelta(hours=2)
+        end_time = start_time + timedelta(hours=1, minutes=30)
 
         logging.debug(start_time.strftime("%Y-%m-%d %I:%M %p"))
         logging.debug(start_time.astimezone().strftime("%Y-%m-%d %I:%M %p"))
@@ -137,10 +139,13 @@ def main():
 
     logging.debug(cal.to_ical().decode("utf-8").replace("\r\n", "\n").strip())
 
-    print(f"Calendar has {len(cal.subcomponents)} events.")
+    logging.info(f"Calendar has {len(cal.subcomponents)} events.")
 
-    with open("out.ics", "wb") as fh:
-        fh.write(cal.to_ical())
+    if args.ics_file:
+        with open(args.ics_file, "wb") as fh:
+            fh.write(cal.to_ical())
+    else:
+        print(cal.to_ical().decode(), end="")
 
 
 if __name__ == "__main__":
