@@ -12,6 +12,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
 import argparse
 import chromedriver_autoinstaller_fix
+import logging
 import os
 import time
 import tomli
@@ -36,12 +37,19 @@ def last_day_of_prev_month():
     return format_date_search(last_day)
 
 
+def save_source(driver, filepath):
+    with open(filepath, "w") as out:
+        out.write(driver.page_source)
+
+
 def main():
-    chromedriver_autoinstaller_fix.install(
-        path=os.path.join(os.path.expanduser("~"), "chromedriver")
-    )
+    # chromedriver_autoinstaller_fix.install(
+    #     path=os.path.join(os.path.expanduser("~"), "chromedriver")
+    # )
 
     script_dir = os.path.dirname(os.path.realpath(__file__))
+
+    logdir = os.path.join(os.path.expanduser("~"), "logs")
 
     parser = argparse.ArgumentParser(
         description="Download club visits pdf report.",
@@ -62,7 +70,11 @@ def main():
     parser.add_argument(
         "--headless", action="store_true", help="Run in headless mode"
     )
+    parser.add_argument("-d", "--debug", action="store_true")
     args = parser.parse_args()
+
+    level = logging.DEBUG if args.debug else logging.INFO
+    logging.basicConfig(format="%(levelname)s: %(message)s", level=level)
 
     start_date = parse(args.start_date)
     end_date = parse(args.end_date)
@@ -101,7 +113,7 @@ def main():
 
     driver = webdriver.Chrome(options=options, service=service)
 
-    driver.maximize_window()
+    # driver.maximize_window()
 
     driver.get(config["visits_url"])
 
@@ -143,11 +155,17 @@ def main():
     driver.find_element(By.ID, "membership-clubvisits-filters-go-btn").click()
 
     # time.sleep(10)
+    save_source(driver, os.path.join(logdir, "24hr_checkins.html"))
+    driver.save_screenshot(os.path.join(logdir, "24hr_checkins_screenshot.png"))
 
     # driver.find_element(By.ID, "pt-print").click()
     print_button = WebDriverWait(driver, 30).until(
         EC.element_to_be_clickable((By.ID, "pt-print"))
     )
+    # print_button = WebDriverWait(driver, 30).until(
+    #     EC.presence_of_element_located((By.ID, "pt-print"))
+    # )
+    # driver.execute_script("arguments[0].scrollIntoView(true);", print_button)
     print_button.click()
 
     time_to_wait = 10
