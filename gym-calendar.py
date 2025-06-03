@@ -70,7 +70,7 @@ lines = list(filter(None, lines))
 
 line_iter = iter(lines)
 
-local_timezone = pytz.timezone("US/Eastern")
+local_timezone = pytz.timezone("America/New_York")
 
 dates = defaultdict(list)
 

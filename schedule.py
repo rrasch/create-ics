@@ -43,7 +43,7 @@ cols = {
     5: "opponent",
 }
 
-local_timezone = pytz.timezone("US/Eastern")
+local_timezone = pytz.timezone("America/New_York")
 
 today = date.today()
 

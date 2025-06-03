@@ -50,7 +50,7 @@ def main():
     maps_api_key = os.environ["MAPS_API_KEY"]
     geolocator = GoogleV3(api_key=maps_api_key)
 
-    local_timezone = pytz.timezone("US/Eastern")
+    local_timezone = pytz.timezone("America/New_York")
 
     pd.set_option(
         "display.max_columns",
